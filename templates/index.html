@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Password Strength Tester</title>
+    <style>
+        /* CSS code */
+        body {
+          font-family: Arial, sans-serif;
+          background: linear-gradient(90deg, #9682C8 10%, #05BCC9);
+          margin: 0;
+          padding: 0;
+        }
+
+        .container {
+          max-width: 450px;
+          margin: 0 auto;
+          margin-top: 50px;
+          padding: 30px 20px;
+          background-color: #fff;
+          border-radius: 5px;
+          box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+        }
+
+        h1 {
+          text-align: center;
+          margin-top: 0;
+          margin-bottom: 20px;
+        }
+
+        #password {
+          width: 100%;
+          max-width: 300px;
+          padding: 10px;
+          border: 1px solid #ccc;
+          border-radius: 4px;
+          font-size: 16px;
+        }
+
+        #submitBtn {
+          margin-top: 20px;
+          background-color: #05BCC9;
+          color: #fff;
+          border: none;
+          padding: 10px 15px;
+          border-radius: 4px;
+          font-size: 16px;
+          cursor: pointer;
+        }
+
+        #submitBtn:hover {
+          background-color: #45a049;
+        }
+
+        #result {
+          margin-top: 20px;
+        }
+
+         .strength-meter {
+          margin-top: 20px;
+          width: 100%;
+          height: 10px;
+          border-radius: 4px;
+          background-color: #eee;
+          overflow: hidden;
+        }
+
+         .strength-meter .strength-level {
+          height: 100%;
+          transition: width 0.3s;
+        }
+
+         .strength-level-0 {
+          background-color: #ff4500;
+        }
+
+         .strength-level-1 {
+          background-color: #ff7f00;
+        }
+
+         .strength-level-2 {
+          background-color: #f9ca04;
+        }
+
+        .strength-level-3 {
+          background-color: #5eb95e;
+        }
+
+         .strength-level-4 {
+          background-color: #4caf50;
+        }
+
+        #result p {
+          font-size: 18px;
+          margin: 0;
+          padding: 5px;
+        }
+
+       #result span {
+        color:red ;
+       }
+       .input-container {
+        margin-left: 9%;
+        display: flex;
+        align-items: center;
+    }
+
+        .password-toggle {
+          
+          padding: 10px 15px;
+          border-radius: 4px;
+          margin-top: 10px;
+          font-size: 14px;
+          cursor: pointer;
+        }
+
+        .password-toggle svg {
+          width: 18px;
+          height: 18px;
+          
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Password Strength Tester</h1>
+        <div class="input-container">
+        <input type="password" id="password" placeholder="Enter your password"><div class="password-toggle" onclick="togglePasswordVisibility()">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-eye">
+                <path d="M22.926 12.267C21.682 14.179 18.994 17 12 17s-9.682-2.821-10.926-4.733a1.775 1.775 0 0 1 0-2.534C2.318 7.821 5.006 5 12 5s9.682 2.821 10.926 4.733a1.775 1.775 0 0 1 0 2.534z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+            
+        </div></div>
+        <button id="submitBtn" onclick="checkPasswordStrength()">Check Strength</button>
+        <div class="strength-meter">
+            <div class="strength-level"></div>
+        </div>
+        <div id="result">
+            <p></p>
+            <p id="pwnedCount"></p> <!-- Added element to display pwned count -->
+        </div>
+        
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+       // Function to check password strength
+function checkPasswordStrength() {
+    var password = $('#password').val(); // Get the password value from the input field
+
+    // Send a POST request to the server to check password strength
+    $.post('/check_password_strength', { password: password }, function(data) {
+        var score = data.score; // Password strength score received from the server
+        var feedback = data.feedback; // Password strength feedback received from the server
+        var crackTime = data.crack_time; // Estimated crack time received from the server
+        var pwnedCount = data.pwned_count; // Pwned count received from the server
+
+        var strengthMeter = $('.strength-meter'); // Strength meter element
+        var strengthLevel = strengthMeter.find('.strength-level'); // Strength level element
+
+        // Remove existing strength level classes
+        strengthLevel.removeClass('strength-level-0 strength-level-1 strength-level-2 strength-level-3 strength-level-4');
+
+        // Add appropriate strength level class based on the score
+        switch (score) {
+            case 0:
+                strengthLevel.addClass('strength-level-0');
+                break;
+            case 1:
+                strengthLevel.addClass('strength-level-1');
+                break;
+            case 2:
+                strengthLevel.addClass('strength-level-2');
+                break;
+            case 3:
+                strengthLevel.addClass('strength-level-3');
+                break;
+            case 4:
+                strengthLevel.addClass('strength-level-4');
+                break;
+            default:
+                break;
+        }
+
+        var percentage = (score / 4) * 100;
+        strengthLevel.css('width', percentage + '%'); // Set the width of the strength level indicator
+
+        var resultText = '<strong>Password Strength: <span>' + percentage + '%</span></strong><br>';
+        resultText += '<strong>Suggestions: </strong>' + feedback.join(', ') + '<br>';
+        resultText += '<strong>Crack Time: </strong>' + crackTime;
+
+        $('#result p').html(resultText); // Update the result element with the password strength information
+        
+        // Display the pwned count if available
+        if (pwnedCount > 0) {
+            var pwnedText = 'This password was exposed previously in data breaches <strong>' + pwnedCount + '</strong> times';
+            $('#pwnedCount').html(pwnedText);
+        } else {
+            var pwnedText = 'This password has<strong> never</strong> been exposed in data breaches ';
+            $('#pwnedCount').html(pwnedText); // Clear the pwned count if not available
+        }
+    });
+}
+
+// Function to toggle password visibility
+function togglePasswordVisibility() {
+    var passwordField = document.getElementById("password");
+    if (passwordField.type === "password") {
+        passwordField.type = "text"; // Change the input type to text to show the password
+    } else {
+        passwordField.type = "password"; // Change the input type to password to hide the password
+    }
+}
+
+    </script>
+</body>
+</html>
+
