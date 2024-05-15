@@ -6,9 +6,14 @@
         /* CSS code */
         body {
           font-family: Arial, sans-serif;
-          background: linear-gradient(90deg, #9682C8 10%, #05BCC9);
+          background: url('{{ url_for('static', filename='image1.jpg') }}') no-repeat center center fixed; 
+          -webkit-background-size: cover;
+          -moz-background-size: cover;
+          -o-background-size: cover;
+          background-size: cover;
           margin: 0;
           padding: 0;
+          color: #fff;
         }
 
         .container {
@@ -16,7 +21,7 @@
           margin: 0 auto;
           margin-top: 50px;
           padding: 30px 20px;
-          background-color: #fff;
+          background-color: #333;
           border-radius: 5px;
           box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
           display: flex;
@@ -29,6 +34,7 @@
           text-align: center;
           margin-top: 0;
           margin-bottom: 20px;
+          color: #fff;
         }
 
         #password {
@@ -38,11 +44,13 @@
           border: 1px solid #ccc;
           border-radius: 4px;
           font-size: 16px;
+          background-color: #444;
+          color: #fff;
         }
 
         #submitBtn {
           margin-top: 20px;
-          background-color: #05BCC9;
+          background-color: #3498db;
           color: #fff;
           border: none;
           padding: 10px 15px;
@@ -52,7 +60,7 @@
         }
 
         #submitBtn:hover {
-          background-color: #45a049;
+          background-color: #2980b9;
         }
 
         #result {
@@ -64,7 +72,7 @@
           width: 100%;
           height: 10px;
           border-radius: 4px;
-          background-color: #eee;
+          background-color: #555;
           overflow: hidden;
         }
 
@@ -74,29 +82,30 @@
         }
 
          .strength-level-0 {
-          background-color: #ff4500;
+          background-color: #e74c3c;
         }
 
          .strength-level-1 {
-          background-color: #ff7f00;
+          background-color: #f39c12;
         }
 
          .strength-level-2 {
-          background-color: #f9ca04;
+          background-color: #f1c40f;
         }
 
         .strength-level-3 {
-          background-color: #5eb95e;
+          background-color: #27ae60;
         }
 
          .strength-level-4 {
-          background-color: #4caf50;
+          background-color: #2ecc71;
         }
 
         #result p {
           font-size: 18px;
           margin: 0;
           padding: 5px;
+          color: #fff;
         }
 
        #result span {
@@ -123,6 +132,7 @@
           
         }
     </style>
+    
 </head>
 <body>
     <div class="container">
@@ -143,29 +153,32 @@
             <p></p>
             <p id="pwnedCount"></p> <!-- Added element to display pwned count -->
         </div>
+
+        <button id="submitBtn" onclick="enhancePassword()">Enhance Password</button>
+
+        <button id="submitBtn" onclick="generatePassword()">Get Suggestion</button>
+        
+        <p id="passwordDisplay">...</p>
         
     </div>
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
-       // Function to check password strength
+
 function checkPasswordStrength() {
-    var password = $('#password').val(); // Get the password value from the input field
+    var password = $('#password').val(); 
 
-    // Send a POST request to the server to check password strength
     $.post('/check_password_strength', { password: password }, function(data) {
-        var score = data.score; // Password strength score received from the server
-        var feedback = data.feedback; // Password strength feedback received from the server
-        var crackTime = data.crack_time; // Estimated crack time received from the server
-        var pwnedCount = data.pwned_count; // Pwned count received from the server
+        var score = data.score; 
+        var feedback = data.feedback; 
+        var crackTime = data.crack_time; 
+        var pwnedCount = data.pwned_count; 
 
-        var strengthMeter = $('.strength-meter'); // Strength meter element
-        var strengthLevel = strengthMeter.find('.strength-level'); // Strength level element
+        var strengthMeter = $('.strength-meter');
+        var strengthLevel = strengthMeter.find('.strength-level');
 
-        // Remove existing strength level classes
         strengthLevel.removeClass('strength-level-0 strength-level-1 strength-level-2 strength-level-3 strength-level-4');
 
-        // Add appropriate strength level class based on the score
         switch (score) {
             case 0:
                 strengthLevel.addClass('strength-level-0');
@@ -187,36 +200,124 @@ function checkPasswordStrength() {
         }
 
         var percentage = (score / 4) * 100;
-        strengthLevel.css('width', percentage + '%'); // Set the width of the strength level indicator
+        strengthLevel.css('width', percentage + '%'); 
 
         var resultText = '<strong>Password Strength: <span>' + percentage + '%</span></strong><br>';
         resultText += '<strong>Suggestions: </strong>' + feedback.join(', ') + '<br>';
         resultText += '<strong>Crack Time: </strong>' + crackTime;
 
-        $('#result p').html(resultText); // Update the result element with the password strength information
+        $('#result p').html(resultText); 
         
-        // Display the pwned count if available
         if (pwnedCount > 0) {
             var pwnedText = 'This password was exposed previously in data breaches <strong>' + pwnedCount + '</strong> times';
             $('#pwnedCount').html(pwnedText);
         } else {
             var pwnedText = 'This password has<strong> never</strong> been exposed in data breaches ';
-            $('#pwnedCount').html(pwnedText); // Clear the pwned count if not available
+            $('#pwnedCount').html(pwnedText); 
         }
     });
+
+
 }
 
-// Function to toggle password visibility
-function togglePasswordVisibility() {
-    var passwordField = document.getElementById("password");
-    if (passwordField.type === "password") {
-        passwordField.type = "text"; // Change the input type to text to show the password
-    } else {
-        passwordField.type = "password"; // Change the input type to password to hide the password
+    function togglePasswordVisibility() {
+        var passwordField = document.getElementById("password");
+        if (passwordField.type === "password") {
+            passwordField.type = "text"; 
+        } else {
+            passwordField.type = "password";
+        }
     }
-}
 
-    </script>
+    function generatePassword() {
+        var passLength = false;
+
+        while (!passLength) {
+            var passwordLength = parseInt(prompt("How many characters would you like your password (between 8 and 128 characters)?"));
+            if (!passwordLength) {
+            alert("You must enter a number.");
+            passwordLength = parseInt(prompt("How many characters would you like your password (between 8 and 128 characters)?"));
+            }
+            else if (passwordLength < 8 || passwordLength > 128 || passwordLength === 0) {
+            alert("Value must be between 8 and 128.");
+            passwordLength = parseInt(prompt("How many characters would you like your password (between 8 and 128 characters)?"));
+            }
+            else {
+            passLength = true;
+            }
+        }
+
+        var Numbers = ["1", "2", "3", "4", "5", "6", "7", "8", "9"];
+        numbConfirm = confirm("Will this contain numbers?");
+
+        var characters = ["!", "@", "#", "$", "%", "^", "&", "*", "?", "+", "="];
+        charConfirm = confirm("Will this contain special characters?");
+
+        upperConfirm = confirm("Will this contain uppercase letters?");
+        var uppercase = ["A", "B", "C", "D", "E", "F","G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"];
+
+        lowerConfirm = confirm("Will this contain lowercase letters?");
+        var lowercase = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"];
+
+        var output = [];
+
+        while (output.length < passwordLength) {
+
+            if (numbConfirm === true && output.length < passwordLength) {
+                output.push(Numbers[Math.floor(Math.random() * Numbers.length)]);
+            }
+
+            if (charConfirm === true && output.length < passwordLength) {
+                output.push(characters[Math.floor(Math.random() * characters.length)]);
+            }
+
+            if (upperConfirm === true && output.length < passwordLength) {
+                output.push(uppercase[Math.floor(Math.random() * uppercase.length)]);
+            }
+
+            if (lowerConfirm === true && output.length < passwordLength) {
+                output.push(lowercase[Math.floor(Math.random() * lowercase.length)]);
+            }
+        }
+
+        var passwordOutput = output.join("");
+        console.log(passwordOutput);
+        document.getElementById('passwordDisplay').innerText = passwordOutput;
+
+        return passwordOutput;
+    }
+
+    function enhancePassword() {
+        var inputPassword = $('#password').val(); 
+
+        var hasNumber = /\d/.test(inputPassword);
+        var hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(inputPassword);
+        var hasUpper = /[A-Z]/.test(inputPassword);
+        var hasLower = /[a-z]/.test(inputPassword);
+        var numbers = "1234567890";
+        var specialChars = "!@#$%^&*()_+{}:<>?|[];,.";
+        var upperCase = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        var lowerCase = "abcdefghijklmnopqrstuvwxyz";
+
+        if (!hasNumber) {
+            inputPassword += numbers[Math.floor(Math.random() * numbers.length)];
+        }
+        if (!hasSpecial) {
+            inputPassword += specialChars[Math.floor(Math.random() * specialChars.length)];
+        }
+        if (!hasUpper) {
+            inputPassword += upperCase[Math.floor(Math.random() * upperCase.length)];
+        }
+        if (!hasLower) {
+            inputPassword += lowerCase[Math.floor(Math.random() * lowerCase.length)];
+        }
+
+        var shuffledPassword = inputPassword.split('').sort(function() { return 0.5 - Math.random() }).join('');
+
+        $('#passwordDisplay').text(shuffledPassword);
+    }
+
+</script>
 </body>
 </html>
 
